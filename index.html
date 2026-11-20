@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <!--
 =====================================================================
- PROMPTGEN WIZARD v2 - step by step, tema cerah (siap deploy GitHub Pages)
- Deploy: simpan sebagai index.html di repo, aktifkan Settings > Pages.
+ PROMPTGEN WIZARD v4 - khusus EXATA, 5 langkah + hasil, tema cerah
+ Deploy GitHub Pages: simpan sebagai index.html, unggah juga
+ karakter-exata.jpg (foto karakter) di folder yang sama, lalu aktifkan
+ Settings > Pages.
  Bagian yang mudah diedit (cari komentar "EDIT"):
    1. WARNA TEMA ............ CSS ":root"
-   2. DIVISI & DEFAULT OTOMATIS .. JS variabel DIV (warna, gaya, ornamen, logo)
-   3. TEMPLATE REFERENSI .... JS bagian TEMPLATE REFERENSI (folder refs/)
-   4. AI PEMINDAI GAMBAR .... JS variabel SCAN_URL dan SCAN_PROMPT
-   5. TEMPLATE PROMPT ....... JS fungsi build()
+   2. BRAND EXATA ........... JS variabel DIV (ornamen, logo)
+   3. KARAKTER DNA .......... JS variabel CHAR (nama file foto dan deskripsi DNA)
+   4. 10 GAYA DESAIN ........ JS variabel STY
+   5. 10 GAYA BAHASA ........ JS variabel LANG
+   6. POSISI LOGO ........... JS variabel LOGOS
+   7. TEMPLATE PROMPT ....... JS fungsi buildGPT() dan buildGem()
+ Semua pilihan user disimpan otomatis di perangkat (localStorage).
 =====================================================================
 -->
 <html lang="id">
@@ -16,7 +21,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<title>PromptGen Wizard</title>
+<title>Untuk Memudahkan Anda</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 /* EDIT 1: warna tema (aksen utama --a, aksen kedua --b) */
@@ -27,7 +32,6 @@ html,body{margin:0;background:var(--bg)}
 body{min-height:100vh;font-family:'Sora',system-ui,sans-serif;color:var(--ink);
  background:radial-gradient(600px 300px at 0% -5%,var(--a2),transparent 70%),radial-gradient(600px 320px at 100% 0%,var(--b2),transparent 70%),#fff;background-repeat:no-repeat}
 .app{max-width:760px;margin:0 auto;padding:0 16px 130px}
-/* header + progress */
 .top{position:sticky;top:0;z-index:4;margin:0 -16px;padding:12px 16px 10px;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .logo{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:-.02em}
@@ -37,7 +41,6 @@ body{min-height:100vh;font-family:'Sora',system-ui,sans-serif;color:var(--ink);
 .dots button{flex:1;height:6px;padding:0;border:0;border-radius:6px;background:var(--line);cursor:default;transition:background .3s}
 .dots button.done{background:var(--a);cursor:pointer}
 .dots button.cur{background:linear-gradient(90deg,var(--a),#ffb347)}
-/* layar */
 .scr{display:none;padding-top:22px;animation:in .35s ease}
 .scr.on{display:block}
 @keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -52,32 +55,35 @@ textarea{resize:vertical;min-height:120px;line-height:1.55}
 input:focus,textarea:focus,select:focus{border-color:var(--a);box-shadow:0 0 0 4px rgba(255,106,61,.14)}
 button{font:inherit;font-weight:600;font-size:.85rem;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 15px;cursor:pointer;transition:transform .12s,border-color .2s,background .2s}
 button:active{transform:scale(.97)}
-button:focus-visible,a:focus-visible{outline:3px solid rgba(79,70,229,.35);outline-offset:2px}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid rgba(79,70,229,.35);outline-offset:2px}
 .row{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border-radius:999px;padding:8px 14px;font-size:.78rem;background:var(--soft)}
 .chip:hover{border-color:var(--a)}
-.chip.on{background:var(--a);border-color:var(--a);color:#fff}
-/* kartu pilihan */
 .opt{position:relative;text-align:left}
 .opt.on{border-color:var(--a);background:var(--a2);box-shadow:0 0 0 3px rgba(255,106,61,.15)}
-.divs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-@media(min-width:620px){.divs{grid-template-columns:repeat(4,1fr)}}
-.divs .opt{display:flex;flex-direction:column;gap:8px;padding:12px;font-size:.76rem;line-height:1.3;min-height:92px}
-.divs .lg{height:30px;display:flex;align-items:center}
-.divs .lg img{max-height:30px;max-width:90px;object-fit:contain}
-.divs .lg b{font-size:1.1rem;color:var(--mut)}
-/* galeri */
-.gh{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.cnt{font-size:.8rem;font-weight:700;color:var(--b);background:var(--b2);border-radius:999px;padding:5px 12px}
-.gal{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
-@media(min-width:620px){.gal{grid-template-columns:repeat(5,1fr)}}
-.ref{position:relative;aspect-ratio:1/1;border-radius:14px;overflow:hidden;border:2px solid var(--line);padding:0;background:linear-gradient(160deg,var(--a2),var(--b2))}
-.ref img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.ref .tg{position:absolute;left:0;right:0;bottom:0;padding:18px 6px 5px;font-size:.6rem;font-weight:600;line-height:1.2;color:#fff;background:linear-gradient(transparent,rgba(15,23,42,.8));text-align:left}
-.ref .ck{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:var(--a);color:#fff;font-weight:800;display:none;place-items:center;font-size:.85rem}
-.ref.on{border-color:var(--a);box-shadow:0 0 0 3px rgba(255,106,61,.25)}.ref.on .ck{display:grid}
-.note{margin-top:12px;font-size:.78rem;color:var(--mut);line-height:1.5}
-.note span{display:inline-block;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:2px 10px;margin:2px 4px 2px 0;color:var(--ink)}
+.brandbox{display:flex;align-items:center;gap:10px;margin-top:18px;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;background:var(--soft);font-size:.82rem;color:var(--mut);line-height:1.4}
+.brandbox i{flex:none;width:14px;height:14px;border-radius:3px;background:var(--a)}
+.brandbox b{color:var(--ink);letter-spacing:.06em}
+/* pilihan radio */
+.radg{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:620px){.radg.c2{grid-template-columns:1fr 1fr}}
+.radg.s2{grid-template-columns:1fr 1fr}
+.rad{position:relative;display:block;cursor:pointer}
+.rad input{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer}
+.rad .box{display:block;height:100%;border:1.5px solid var(--line);border-radius:14px;padding:13px 14px;background:#fff;transition:border-color .2s,background .2s,box-shadow .2s}
+.rad:hover .box{border-color:#cbd3e4}
+.rad input:checked+.box{border-color:var(--a);background:var(--a2);box-shadow:0 0 0 3px rgba(255,106,61,.15)}
+.rad input:focus-visible+.box{outline:3px solid rgba(79,70,229,.4);outline-offset:2px}
+.rad .tt{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-weight:800;font-size:.9rem}
+.rad .hn{display:block;margin-top:4px;font-size:.76rem;color:var(--mut);line-height:1.4;font-weight:400}
+.pill{display:inline-block;font-size:.62rem;font-weight:800;color:#fff;background:var(--b);border-radius:999px;padding:2px 9px;letter-spacing:.02em}
+.sw{display:inline-flex;gap:3px;margin-left:auto}
+.sw i{width:10px;height:10px;border-radius:50%;border:1px solid #cbd3e4;background:#fff}
+.sw i:nth-child(2){background:#F7941D;border-color:#F7941D}.sw i:nth-child(3){background:#111;border-color:#111}
+.lp{display:flex;align-items:center;gap:10px}
+.pos{position:relative;flex:none;width:38px;height:38px;border:1.5px solid #cbd3e4;border-radius:7px;background:#fff}
+.pos i{position:absolute;width:12px;height:7px;border-radius:2px;background:var(--a)}
+.p-tl i{top:3px;left:3px}.p-tr i{top:3px;right:3px}.p-bl i{bottom:3px;left:3px}.p-br i{bottom:3px;right:3px}
 /* jenis konten */
 .types{display:grid;grid-template-columns:1fr;gap:10px}
 @media(min-width:620px){.types{grid-template-columns:repeat(3,1fr)}}
@@ -92,29 +98,19 @@ button:focus-visible,a:focus-visible{outline:3px solid rgba(79,70,229,.35);outli
 .sl{display:flex;flex-wrap:wrap;gap:8px}
 .sl button{width:44px;height:44px;padding:0;border-radius:12px;font-size:.95rem}
 .sl button.on{background:var(--a);border-color:var(--a);color:#fff}
-/* kontak */
+.ais{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ais .opt{padding:13px 14px}
+.ais b{display:block;font-size:.92rem}
+.ais small{display:block;color:var(--mut);font-size:.74rem;font-weight:400;margin-top:2px}
 .cts{display:grid;gap:10px}
 .ct{display:flex;align-items:center;gap:10px}
 .ct span{flex:none;width:92px;font-size:.78rem;font-weight:700;color:var(--mut)}
-/* upload */
-.up{display:block;border:2px dashed #cbd3e4;border-radius:18px;padding:22px 14px;text-align:center;font-size:.86rem;color:var(--mut);background:var(--soft);cursor:pointer}
-.up b{display:block;color:var(--ink);font-size:.95rem;margin-bottom:2px}
-.up:hover{border-color:var(--a)}
-.it{display:grid;grid-template-columns:72px 1fr;gap:12px;margin-top:10px;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:10px}
-.it img{width:72px;height:72px;object-fit:cover;border-radius:10px;background:var(--soft)}
-.it textarea{min-height:68px;font-size:.78rem;padding:9px 10px;border-radius:10px}
-.it .tl{display:flex;gap:6px;margin-bottom:6px}
-.it .tl select{padding:7px 9px;font-size:.76rem;border-radius:10px}
-.it .tl button{padding:7px 11px;font-size:.76rem}
-.st{font-size:.72rem;color:var(--mut);margin:0 0 5px}
-/* navigasi bawah */
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
 .nav>div{max-width:760px;margin:0 auto;display:flex;gap:10px}
 .nav .bk{flex:0 0 auto;padding:14px 20px}
 .nav .nx{flex:1}
 .pri{background:linear-gradient(135deg,var(--a),#ff9a3d);color:#fff;border:0;font-weight:800;font-size:.95rem;padding:14px 22px;border-radius:14px;box-shadow:0 8px 20px rgba(255,106,61,.3)}
 .pri[disabled]{background:#e5e9f2;color:#94a3b8;box-shadow:none;cursor:not-allowed}
-/* hasil */
 .sum{display:grid;gap:8px;margin:0 0 16px}
 .sum button{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;background:var(--soft);padding:12px 14px;font-weight:400;font-size:.82rem}
 .sum b{font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;display:block;font-weight:700}
@@ -122,25 +118,19 @@ button:focus-visible,a:focus-visible{outline:3px solid rgba(79,70,229,.35);outli
 .how{counter-reset:h;list-style:none;padding:0;margin:16px 0;display:grid;gap:10px}
 .how li{counter-increment:h;display:flex;gap:12px;align-items:flex-start;font-size:.86rem;line-height:1.45}
 .how li:before{content:counter(h);flex:none;width:26px;height:26px;border-radius:50%;background:var(--b);color:#fff;font-weight:800;font-size:.78rem;display:grid;place-items:center}
-details{border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;margin-top:14px;background:#fff}
-summary{cursor:pointer;font-weight:700;font-size:.84rem}
+details{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:18px;background:#fff}
+summary{cursor:pointer;font-weight:700;font-size:.86rem}
+.st{font-size:.72rem;color:var(--mut);font-weight:400}
 #res{margin-top:10px;min-height:280px;font-size:.76rem;font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--soft)}
-.att{margin:8px 0 0;padding-left:18px;font-size:.82rem;line-height:1.7}
-.att a{color:var(--b);font-weight:600}
-.big{width:100%;margin-top:6px}
-.ais{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.ais .opt{padding:13px 14px}
-.ais b{display:block;font-size:.92rem}
-.ais small{display:block;color:var(--mut);font-size:.74rem;font-weight:400;margin-top:2px}
+.att{margin:8px 0 0;padding-left:0;list-style:none;display:grid;gap:10px;font-size:.82rem;line-height:1.5}
+.att li{display:flex;gap:10px;align-items:center;background:var(--soft);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px}
+.att img{flex:none;width:46px;height:62px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.att .lg{flex:none;width:14px;height:14px;border-radius:3px;background:var(--a)}
+.att a{color:var(--b);font-weight:700}
+.att small{display:block;color:var(--mut);font-size:.74rem}
 .tip{background:var(--b2);border-radius:14px;padding:12px 14px;font-size:.8rem;line-height:1.55;margin:4px 0 6px}
 .tip b{display:block;margin-bottom:2px;color:var(--b)}
 .tip ul{margin:4px 0 0;padding-left:18px}
-.ref.noimg:before{content:"Pratinjau tidak tersedia";position:absolute;top:38%;left:0;right:0;text-align:center;font-size:.6rem;color:var(--mut);padding:0 8px}
-.brandbox{display:flex;align-items:center;gap:10px;margin-top:18px;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;background:var(--soft);font-size:.82rem;color:var(--mut);line-height:1.4}
-.brandbox i{flex:none;width:14px;height:14px;border-radius:3px;background:var(--a)}
-.brandbox b{color:var(--ink);letter-spacing:.06em}
-.ref.noimg{cursor:not-allowed;opacity:.7}
-.ref.noimg:before{content:"Belum diunggah";position:absolute;top:42%;left:0;right:0;text-align:center;font-size:.64rem;color:var(--mut);padding:0 8px}
 #toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(10px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:.8rem;opacity:0;transition:all .25s;pointer-events:none;z-index:9;max-width:90vw;text-align:center}
 #toast.on{opacity:1;transform:translateX(-50%)}
 </style>
@@ -148,36 +138,42 @@ summary{cursor:pointer;font-weight:700;font-size:.84rem}
 <body>
 <div class="app">
 <header class="top">
- <div class="brand"><div class="logo"><i></i>PromptGen</div><div class="stp" id="stp"></div></div>
+ <div class="brand"><div class="logo"><i></i>Untuk Memudahkan Antum</div><div class="stp" id="stp"></div></div>
  <div class="dots" id="dots"></div>
 </header>
 
 <!-- LANGKAH 1 -->
 <section class="scr" id="s1">
- <span class="kick">Langkah 1 dari 4</span>
- <h1>Apa yang ingin kamu buat?</h1>
- <p class="lead">Tulis bebas, termasuk jumlah ide dan topiknya. Kalimatmu menjadi inti prompt untuk ChatGPT.</p>
+ <span class="kick">Langkah 1 dari 5</span>
+ <h1>Biasanya nanya apa di gemini?</h1>
+ <p class="lead">Tulis bebas, nanti di kasih idenya dulu sama AI sebelum bikin gambar antum.</p>
  <textarea id="want" placeholder="Contoh: buatkan 6 ide konten terkait keresahan pemagang di Jepang yang sedang terjadi akhir-akhir ini"></textarea>
  <div class="row" id="ex" style="margin-top:10px"></div>
- <div class="brandbox"><i></i><span><b>EXATA</b><br>Warna, gaya, dan logo brand terisi otomatis. Logo selalu di pojok kiri atas.</span></div>
+ <div class="brandbox"><i></i><span><b>EXATA</b><br>Warna dasar putih, aksen oranye, dan hitam sesuai logo terisi otomatis. Karakter manusia memakai wajah Anda.</span></div>
 </section>
 
 <!-- LANGKAH 2 -->
 <section class="scr" id="s2">
- <span class="kick">Langkah 2 dari 4</span>
- <h1>Pilih template desain EXATA</h1>
- <p class="lead">Ketuk sampai 3 template yang kamu suka. AI memindai tata letaknya otomatis dan menambahkannya ke prompt. File template juga dilampirkan ke AI di langkah terakhir.</p>
- <div class="gh">
-  <span class="cnt" id="cnt2">0/6 dipilih</span>
- </div>
- <div class="tip" id="lim" style="display:none;margin-top:12px"><b>Template belum ditemukan</b>Unggah 10 gambar persegi ke folder <code>refs/</code> di repo GitHub dengan nama ref-01.jpg sampai ref-10.jpg (boleh .png atau .webp), lalu muat ulang halaman.</div>
- <div class="gal" id="gal"></div>
- <div class="note" id="pick"></div>
+ <span class="kick">Langkah 2 dari 5</span>
+ <h1>Desainnya mau kayak apa?</h1>
+ <p class="lead">Bingung? Pilih yang di tandain <span class="pill">Rekomendasi</span></p>
+ <div class="radg c2" id="styRad" role="radiogroup" aria-label="Gaya desain"></div>
 </section>
 
-<!-- LANGKAH 3 -->
+<!-- LANGKAH 3: OPSI LANJUTAN -->
 <section class="scr" id="s3">
- <span class="kick">Langkah 3 dari 4</span>
+ <span class="kick">Langkah 3 dari 5</span>
+ <h1>Opsi lanjutan</h1>
+ <p class="lead">Kalo males langsung lanjut aja.</p>
+ <label class="l" style="margin-top:0">Posisi logo EXATA</label>
+ <div class="radg s2" id="logoRad" role="radiogroup" aria-label="Posisi logo"></div>
+ <label class="l">Gaya bahasa di dalam desain</label>
+ <div class="radg c2" id="langRad" role="radiogroup" aria-label="Gaya bahasa"></div>
+</section>
+
+<!-- LANGKAH 4: FORMAT -->
+<section class="scr" id="s4">
+ <span class="kick">Langkah 4 dari 5</span>
  <h1>Mau jadi konten apa?</h1>
  <p class="lead">Pilih satu jenis. Hasil akhirnya mengikuti format ini.</p>
  <div class="types" id="types">
@@ -188,48 +184,45 @@ summary{cursor:pointer;font-weight:700;font-size:.84rem}
  <div id="slWrap">
   <label class="l">Berapa slide?</label>
   <div class="sl" id="slides"></div>
+  <p class="st" id="slNote" style="margin:10px 0 0"></p>
  </div>
- <label class="l">Prompt ini dipakai di AI mana?</label>
+ <label class="l">Mau pake AI apa?</label>
  <div class="ais" id="aiSel">
   <button class="opt" type="button" data-ai="chatgpt"><b>ChatGPT</b><small>Prompt format GPT Image</small></button>
   <button class="opt" type="button" data-ai="gemini"><b>Gemini</b><small>Prompt disesuaikan khusus Gemini</small></button>
  </div>
 </section>
 
-<!-- LANGKAH 4 -->
-<section class="scr" id="s4">
- <span class="kick">Langkah 4 dari 4</span>
- <h1>Tambahan <span style="color:var(--mut);font-weight:600">(boleh dilewati)</span></h1>
- <p class="lead">Kontak yang diisi akan disematkan. Yang kosong tidak dibuat sama sekali.</p>
+<!-- LANGKAH 5: KONTAK -->
+<section class="scr" id="s5">
+ <span class="kick">Langkah 5 dari 5</span>
+ <h1>Kontak <span style="color:var(--mut);font-weight:600">(boleh dilewati)</span></h1>
+ <p class="lead">Kontak yang diisi akan disematkan di desain. Yang kosong tidak dibuat sama sekali.</p>
  <div class="cts">
-  <div class="ct"><span>WhatsApp</span><input id="wa" inputmode="tel" placeholder="08xxxxxxxxxx"></div>
-  <div class="ct"><span>Instagram</span><input id="ig" placeholder="@username"></div>
+  
+  <div class="ct"><span>WhatsApp</span><input id="wa" inputmode="tel" placeholder="08xxxxxxxxxx" value="081293999219"></div>
+  <div class="ct"><span>Instagram</span><input id="ig" placeholder="@username" value="exataindonesiaofficial"></div>
   <div class="ct"><span>TikTok</span><input id="tt" placeholder="@username"></div>
  </div>
- <label class="l">Logo / foto / desain milikmu <small>(maks. 6, dipindai AI otomatis)</small></label>
- <label class="up" for="fi"><b>+ Pilih gambar</b>Tanpa upload, ChatGPT membuat karakter manusia realistis, bukan kartun.</label>
- <input id="fi" type="file" accept="image/*" multiple hidden>
- <div id="items"></div>
 </section>
 
 <!-- HASIL -->
-<section class="scr" id="s5">
+<section class="scr" id="s6">
  <span class="kick" style="background:#e8f7ee;color:var(--ok)">Selesai</span>
- <h1>Prompt kamu sudah siap</h1>
- <p class="lead">Cek ringkasannya. Ketuk bagian mana pun untuk mengubahnya.</p>
+ <h1>Prompt udah jadi</h1>
+ <p class="lead">Langsung klik tombol di bawah buat copas ke AI.</p>
  <label class="l" style="margin-top:0">Prompt untuk</label>
  <div class="ais" id="aiRes" style="margin-bottom:16px">
   <button class="opt" type="button" data-ai="chatgpt"><b>ChatGPT</b></button>
   <button class="opt" type="button" data-ai="gemini"><b>Gemini</b></button>
  </div>
  <div class="sum" id="sum"></div>
- <button class="pri big" id="cp">Salin Prompt</button>
  <ol class="how" id="how"></ol>
  <div class="tip" id="tip"></div>
- <label class="l">Lampirkan ke ChatGPT</label>
+ <label class="l">Lampirkan ke AI bersama prompt</label>
  <ul class="att" id="att"></ul>
  <details><summary>Lihat isi prompt <span id="cnt" class="st"></span></summary><textarea id="res" readonly></textarea></details>
- <div class="row" style="margin-top:16px"><button id="again">Mulai dari awal</button></div>
+ <div class="row" style="margin-top:16px"><button id="again">Mulai dari awal (reset semua pilihan)</button></div>
 </section>
 </div>
 
@@ -245,255 +238,273 @@ var $=function(i){return document.getElementById(i)};
 function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(function(){t.classList.remove("on")},2400)}
 function save(k,v){try{localStorage.setItem("pgw_"+k,v)}catch(e){}}
 function load(k){try{return localStorage.getItem("pgw_"+k)||""}catch(e){return""}}
+function by(a,k){for(var i=0;i<a.length;i++)if(a[i].k===k)return a[i];return a[0]}
 
-/* ============ EDIT 2: BRAND EXATA (satu-satunya brand) ============ */
+/* ============ EDIT 2: BRAND EXATA ============ */
 var LB="https://marketingexata.github.io/promptgen/";
-var DIV={n:{n:"EXATA",pal:"hitam charcoal + oranye + putih/abu terang",sty:"korporat modern, elegan, bersih, profesional",orn:"garis lengkung oranye dan putih, bentuk geometris diagonal dengan garis oranye tipis, titik-titik oranye, foto gedung kaca monokrom",logo:["Exata",LB+"exata.png"],ctx:"EXATA (Akuntan Pajak & Notaris), edukasi Nenkin dan Gensen serta urusan administrasi untuk pemagang dan pekerja Indonesia di Jepang"}};
-var curDiv="n";
+var DIV={n:{n:"EXATA",orn:"garis lengkung oranye tipis, bentuk geometris diagonal, titik-titik oranye kecil, ikon grafik batang sederhana",logo:["Exata",LB+"exata.png"],ctx:"EXATA (Akuntan Pajak & Notaris), edukasi Nenkin dan Gensen serta urusan administrasi untuk pemagang dan pekerja Indonesia di Jepang"}};
 
-/* EDIT: 4 contoh keinginan khusus EXATA */
-[["Keresahan pemagang","buatkan 6 ide konten terkait keresahan pemagang di Jepang yang sedang terjadi akhir-akhir ini"],["Edukasi Nenkin","buatkan 5 ide konten edukasi Nenkin untuk pemagang yang akan pulang ke Indonesia"],["Gensen Choshu Hyo","buatkan 6 ide konten tentang Gensen Choshu Hyo yang sering disalahpahami pemagang"],["Pajak & administrasi","buatkan 5 ide konten tips pajak dan administrasi untuk pekerja Indonesia di Jepang"]].forEach(function(t){var b=document.createElement("button");b.className="chip";b.type="button";b.textContent=t[0];b.onclick=function(){$("want").value=t[1];save("want",t[1]);check()};$("ex").appendChild(b)});
-$("want").value=load("want");$("want").oninput=function(){save("want",this.value);check()};
-["wa","ig","tt"].forEach(function(k){$(k).value=load(k);$(k).oninput=function(){save(k,this.value)}});
-
-/* ============ EDIT 3: TEMPLATE REFERENSI (gambar di folder refs/ repo GitHub) ============ */
-/* Nama file: refs/ref-01.jpg sampai refs/ref-10.jpg (.jpg .jpeg .png .webp). Persegi 1:1. */
-var REF_N=10,MAXREF=3,EXTS=[".jpg",".jpeg",".png",".webp"];
-var cur=[],sel={},GAL=false,FAIL=0;
-function mkRefs(){var a=[];for(var i=1;i<=REF_N;i++){var f="ref-"+(i<10?"0":"")+i;a.push({id:f,file:f,name:"Desain "+i,base:"refs/"+f})}return a}
-function loadRef(b,r){var k=0;(function next(){
- if(k>=EXTS.length){b.classList.add("noimg");FAIL++;if(FAIL>=REF_N)$("lim").style.display="";return}
- var im=new Image(),u=r.base+EXTS[k++];
- im.onload=function(){r.url=u;r.file=u.split("/").pop();im.alt=r.name;b.insertBefore(im,b.firstChild)};
- im.onerror=next;im.src=u})()}
-function drawGal(){
- var g=$("gal");g.innerHTML="";FAIL=0;$("lim").style.display="none";cur=mkRefs();
- cur.forEach(function(r){
-  var b=document.createElement("button");b.type="button";b.className="ref"+(sel[r.id]?" on":"");
-  var tg=document.createElement("div");tg.className="tg";tg.textContent=r.name;b.appendChild(tg);
-  var ck=document.createElement("div");ck.className="ck";ck.textContent="\u2713";b.appendChild(ck);
-  b.onclick=function(){if(!r.url){toast("Gambar belum diunggah ke folder refs/");return}
-   if(sel[r.id]){delete sel[r.id]}else{if(Object.keys(sel).length>=MAXREF){toast("Maksimal "+MAXREF+" template");return}sel[r.id]=r}
-   b.classList.toggle("on",!!sel[r.id]);drawPick()};
-  loadRef(b,r);g.appendChild(b)});
-}
-function drawPick(){
- var k=Object.keys(sel),p=$("pick");p.innerHTML="";$("cnt2").textContent=k.length+"/"+MAXREF+" dipilih";
- if(!k.length){p.textContent="Belum ada yang dipilih. Jika dilewati, AI memakai gaya brand EXATA.";}
- else{p.appendChild(document.createTextNode("Terpilih: "));k.forEach(function(id){var s=document.createElement("span");s.textContent=sel[id].name;p.appendChild(s)})}
- nav();
-}
-function refresh(){drawGal()}
-function refsOf(){return Object.keys(sel).map(function(k){return sel[k]})}
-
-/* ============ LANGKAH 3 ============ */
-var TYPE="carousel",N=6;
-(function(){var s=$("slides");for(var i=3;i<=10;i++){(function(i){var b=document.createElement("button");b.type="button";b.className=i===N?"on":"";b.textContent=i;b.onclick=function(){N=i;[].forEach.call(s.children,function(c){c.classList.toggle("on",+c.textContent===N)})};s.appendChild(b)})(i)}})();
-[].forEach.call($("types").children,function(b){b.onclick=function(){TYPE=b.dataset.t;[].forEach.call($("types").children,function(c){c.classList.toggle("on",c===b)});$("slWrap").style.display=TYPE==="carousel"?"":"none"}});
-
-/* ============ EDIT 4: AI PEMINDAI GAMBAR (gratis, tanpa API key) ============ */
-var SCAN_URL="https://text.pollinations.ai/openai";
-var SCAN_PROMPT="Analyze this image for use in a graphic design brief. Reply in Indonesian, max 70 words, in exactly this format:\nTIPE: (logo / foto orang / produk / tempat / desain referensi / lainnya)\nDESKRIPSI: main subject, dominant colors, shapes, any visible text, visual style, composition.";
-var files=[];
-function toData(f,max){return new Promise(function(ok,no){var u=URL.createObjectURL(f),im=new Image();im.onload=function(){var s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);var x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL("image/jpeg",.82))};im.onerror=function(){no(new Error("gambar tidak terbaca"))};im.src=u})}
-function scan(f,pr){
- return toData(f,768).then(function(d){
-  var ac=new AbortController(),to=setTimeout(function(){ac.abort()},45000);
-  return fetch(SCAN_URL,{method:"POST",headers:{"Content-Type":"application/json"},signal:ac.signal,body:JSON.stringify({model:"openai",max_tokens:300,messages:[{role:"user",content:[{type:"text",text:pr||SCAN_PROMPT},{type:"image_url",image_url:{url:d}}]}]})})
-  .then(function(r){clearTimeout(to);if(!r.ok)throw new Error("HTTP "+r.status);return r.json()})
-  .then(function(j){var t=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;if(!t)throw new Error("respons kosong");return t.trim()})});
-}
-function guess(t){var m=/TIPE:\s*([^\n]+)/i.exec(t)||[],x=(m[1]||"").toLowerCase();return x.indexOf("logo")>-1?"logo":x.indexOf("referensi")>-1?"ref":"aset"}
-function drawItems(){
- var b=$("items");b.innerHTML="";
- files.forEach(function(it,i){
-  var d=document.createElement("div");d.className="it";
-  var im=document.createElement("img");im.src=it.thumb;im.alt="";d.appendChild(im);
-  var r=document.createElement("div");
-  var tl=document.createElement("div");tl.className="tl";
-  var se=document.createElement("select");[["aset","Foto / aset"],["logo","Logo"],["ref","Referensi desain"]].forEach(function(o){var op=document.createElement("option");op.value=o[0];op.textContent=o[1];if(it.type===o[0])op.selected=true;se.appendChild(op)});
-  se.onchange=function(){it.type=se.value};tl.appendChild(se);
-  var rm=document.createElement("button");rm.type="button";rm.textContent="Hapus";rm.onclick=function(){files.splice(i,1);drawItems();nav()};tl.appendChild(rm);r.appendChild(tl);
-  var st=document.createElement("p");st.className="st";st.textContent=it.name+" - "+(it.status==="load"?"memindai...":it.status==="err"?"pemindaian gagal, isi deskripsi manual":"hasil pemindaian (bisa diedit)");r.appendChild(st);
-  var ta=document.createElement("textarea");ta.value=it.desc||"";ta.placeholder="Deskripsi gambar";ta.oninput=function(){it.desc=ta.value};r.appendChild(ta);
-  d.appendChild(r);b.appendChild(d)});
-}
-$("fi").onchange=function(){
- var list=[].slice.call(this.files);this.value="";
- list.forEach(function(f){
-  if(files.length>=6){toast("Maksimal 6 gambar");return}
-  var it={name:f.name,type:"aset",desc:"",status:"load",thumb:URL.createObjectURL(f)};files.push(it);drawItems();nav();
-  scan(f).then(function(t){it.desc=t.replace(/^TIPE:[^\n]*\n?/i,"").replace(/^DESKRIPSI:\s*/i,"").trim();it.type=guess(t);it.status="ok";drawItems();nav()})
-  .catch(function(){it.status="err";drawItems();nav()})});
+/* ============ EDIT 3: KARAKTER DNA (dari foto karakter-exata.jpg) ============ */
+var CHAR={
+ photo:"karakter-exata.jpg",
+ dna:[
+  "Jenis: wanita dewasa muda, tampil ramah, profesional, dan percaya diri.",
+  "Bentuk wajah: bulat-oval dengan pipi penuh yang lembut dan dagu kecil membulat.",
+  "Kulit: cerah dengan undertone hangat, halus dan sehat, riasan natural tipis tanpa kesan tebal.",
+  "Mata: berbentuk almond dengan iris cokelat gelap dan kelopak tipis, tatapan hangat; saat tersenyum mata ikut sedikit menyipit.",
+  "Alis: gelap, ketebalan tipis-sedang, melengkung natural dan rapi.",
+  "Hidung: kecil dengan ujung membulat lembut.",
+  "Bibir dan senyum: bibir berwarna merah muda natural, senyum lebar yang tulus memperlihatkan gigi atas yang rapi.",
+  "Hijab: hijab instan hitam berbahan krep atau sifon, jatuh lembut dengan lipatan natural di sekitar dagu dan dada; ciput abu-abu muda terlihat tipis di garis dahi.",
+  "Busana: blazer hitam berkerah notch dengan kemeja putih di dalamnya (tampilan profesional kantor).",
+  "Detail lain: tanpa kacamata dan tanpa perhiasan yang menonjol; ekspresi dasar ceria dan ramah dengan kepala sedikit dimiringkan."
+ ]
 };
 
-var SCAN_PROMPT_REF="Describe this graphic design template for a designer. Reply in Indonesian, max 60 words: layout zones (header, curves, the empty content area and where it is), dominant colors, geometric shapes, photo elements, and where the logo sits.";
-function scanRef(r){return fetch(r.url).then(function(x){if(!x.ok)throw new Error("fetch");return x.blob()}).then(function(bl){return scan(bl,SCAN_PROMPT_REF)})}
-function scanRefs(){var L=refsOf().filter(function(r){return !r.scan});if(!L.length)return Promise.resolve();
- return Promise.all(L.map(function(r){return scanRef(r).then(function(t){r.scan=t}).catch(function(){})}))}
+/* ============ EDIT 4: 10 GAYA DESAIN (rec:true = bertanda Rekomendasi) ============ */
+var STY=[
+{k:"minimalis",n:"Modern Minimalis",h:"Bersih, lapang, fokus satu pesan",d:"banyak ruang putih, tipografi sans-serif bersih, satu headline besar, elemen sangat sedikit, garis oranye tipis sebagai aksen, tanpa dekorasi berlebihan."},
+{k:"youthful",n:"Youthful",h:"Segar, energik, bentuk membulat",d:"energik dan segar, bentuk membulat, label dan stiker kecil berwarna oranye, tipografi tebal yang bersahabat, komposisi sedikit dinamis, tetap bersih dan didominasi putih."},
+{k:"corporate",n:"Corporate",h:"Rapi, formal, terpercaya",d:"rapi dengan grid ketat, tipografi formal, blok hitam tegas sebagai header atau footer, garis oranye tegas, kesan profesional dan terpercaya."},
+{k:"editorial",n:"Editorial",h:"Gaya majalah, elegan dan berkelas",rec:true,d:"tata letak ala majalah, headline serif besar yang kontras dengan teks sans-serif kecil, grid asimetris, garis tipis pemisah, kicker atau nomor kecil berwarna oranye, foto dipotong dengan elegan."},
+{k:"infografis",n:"Infografis Edukatif",h:"Langkah bernomor dan ikon, mudah dipahami",rec:true,d:"langkah bernomor, ikon garis sederhana, panah alur, kotak poin, hierarki sangat jelas agar prosedur dan aturan mudah dipahami; cocok untuk edukasi."},
+{k:"tipografi",n:"Tipografi Tebal",h:"Headline raksasa, kontras kuat",d:"headline sangat besar dan padat yang mendominasi, kata kunci disorot oranye, visual lain minimal, kontras hitam dan putih yang kuat."},
+{k:"premium",n:"Elegan Premium",h:"Tenang, eksklusif, jarak lega",d:"putih bersih dengan hitam pekat dan aksen oranye tipis, tipografi serif ramping, jarak lega, kesan eksklusif dan tenang."},
+{k:"geometris",n:"Geometris Modern",h:"Garis diagonal dan kurva dinamis",d:"bentuk dan garis diagonal oranye dan hitam, kurva halus sebagai pembagi area, blok warna tegas, dinamis namun rapi."},
+{k:"foto",n:"Foto Dominan",h:"Foto besar jadi fokus, teks overlay",d:"foto realistis berukuran besar sebagai fokus utama, panel putih atau hitam semi-transparan untuk teks, headline kontras, label oranye kecil."},
+{k:"kartu",n:"Kartu Modular",h:"Kotak-kotak rapi ala bento grid",d:"tata letak ala kartu atau bento grid, kotak bersudut membulat dengan isi berbeda, garis tipis, aksen oranye pada tiap kartu."}
+];
 
-/* aturan logo, template, dan karakter (dipakai prompt ChatGPT dan Gemini) */
-function logoRule(G){
- var st=TYPE==="story"?(G?" Khusus Story, tetap di kiri atas tetapi turunkan sedikit (sekitar 10-12% dari tepi atas) agar tidak tertutup tampilan aplikasi.":" Pada Story, tetap di kiri atas tetapi turunkan sedikit (sekitar 10-12% dari tepi atas) agar tidak tertutup tampilan aplikasi."):"";
- var sl=TYPE==="carousel"?", termasuk setiap slide dari cover sampai penutup":"";
- var body="Logo EXATA (lockup \"Akuntan Pajak & Notaris\" dan tulisan EXATA) harus selalu tampil di pojok KIRI ATAS pada setiap gambar yang kamu buat"+sl+". Pakai file logo asli yang "+(G?"kulampirkan":"dilampirkan user")+", jangan digambar ulang, diubah, atau diterjemahkan. Lebar logo sekitar 30% dari lebar gambar dengan jarak sekitar 5% dari tepi kiri dan atas. Letakkan di atas area gelap atau kontras (misalnya header hitam) agar terbaca jelas, dan pastikan tidak tertutup elemen lain."+st+" Jika template referensi sudah memuat logo EXATA di kiri atas, pertahankan posisi dan bentuknya persis. Jangan menaruh elemen lain di posisi kiri atas itu.";
- return (G?"**LOGO EXATA (WAJIB)**\n":"# LOGO EXATA (WAJIB DI SETIAP GAMBAR)\n")+body}
-function refBlock(G){
- var L=refsOf().map(function(r,i){return "Template "+(i+1)+" ("+(r.file||r.name)+"): "+(r.scan||"kerangka desain EXATA persegi, lihat lampiran")}).concat(files.filter(function(f){return f.type==="ref"&&f.desc}).map(function(u){return "Referensi tambahan ("+u.name+"): "+u.desc}));
- var rs=TYPE==="story"?"9:16":"4:5";
- if(!L.length)return G?"**REFERENSI DESAIN**\nAku tidak memilih template. Pakai gaya brand EXATA: header gelap, kurva oranye dan putih, area konten terang yang lapang, ornamen geometris, dan satu gaya yang konsisten.":"# REFERENSI DESAIN\nTidak ada template dipilih. Pakai gaya brand EXATA: header gelap, kurva oranye dan putih, area konten terang yang lapang, ornamen geometris, dan satu gaya yang konsisten.";
- return (G?"**TEMPLATE REFERENSI EXATA (KULAMPIRKAN)**\n":"# TEMPLATE REFERENSI EXATA (DILAMPIRKAN)\n")+"Gambar template yang "+(G?"kulampirkan":"dilampirkan")+" adalah kerangka desain resmi EXATA berformat persegi 1:1. Pakai sebagai dasar tata letak dan gaya: header gelap dengan logo di kiri atas, kurva oranye dan putih, area terang yang kosong untuk konten, dan ornamen geometris. Isi area kosong dengan konten ide terpilih (headline, visual, isi, CTA). Adaptasikan tata letaknya ke rasio target ("+rs+") tanpa memotong logo."+(TYPE==="carousel"?" Pakai kerangka yang sama secara konsisten di semua slide.":"")+(L.length>1?" Jika ada lebih dari satu template, gabungkan unsur terbaiknya dan pertahankan satu gaya.":"")+" Jangan menyalin teks atau elemen yang bukan bagian dari kerangka.\nHasil pemindaian template:\n"+L.join("\n")}
-function charRule(G){
- return (G?"**MANUSIA DI GAMBAR**\n":"# KARAKTER / MANUSIA\n")+"Jika desain butuh manusia, gunakan foto manusia realistis ala fotografi profesional dengan proporsi wajar, bukan kartun, anime, ilustrasi vektor, atau 3D. Gunakan orang fiktif yang sesuai konteks topik (misalnya pekerja Indonesia di Jepang).\nEKSPRESI WAJIB EKSPRESIF dan sesuai makna kata-kata atau tema yang tampil bersama karakter itu: bingung, cemas, atau lelah untuk keresahan dan masalah; lega dan tersenyum untuk solusi; serius dan tegas untuk peringatan; antusias dan ramah untuk ajakan. Dukung emosi dengan bahasa tubuh (gerak tangan, posisi bahu, arah pandang). Hindari wajah datar atau netral. "+(G?"Di deskripsi visual Tahap 2, sebutkan emosi yang kamu pilih untuk tiap karakter dan alasannya, lalu gambar sesuai itu.":"Pada Tahap 2, sebutkan singkat emosi yang kamu pilih untuk tiap karakter sebelum menggambar.")}
+/* ============ EDIT 5: 10 GAYA BAHASA ============ */
+var LANG=[
+{k:"formal",n:"Formal & Profesional",ex:"Kami informasikan prosedur pengajuan Nenkin sebagai berikut.",d:"Bahasa baku, kalimat lengkap dan sopan, tanpa singkatan tidak resmi."},
+{k:"semi",n:"Semi Formal",ex:"Sebelum pulang, pastikan data Nenkin kamu sudah lengkap.",d:"Sopan dan jelas tetapi tidak kaku, pakai sapaan 'kamu' atau 'Anda' secara konsisten."},
+{k:"casual",n:"Casual & Friendly",rec:true,ex:"Yuk, cek dulu sebelum pulang ke Indonesia!",d:"Santai, ramah, dan hangat seperti teman, pakai 'kamu', kalimat pendek, boleh seruan ringan."},
+{k:"slang",n:"Slang Sehari-hari",rec:true,ex:"Jangan sampai nyesel, urus Nenkin-nya dari sekarang, gaes!",d:"Bahasa gaul sehari-hari anak muda Indonesia (misalnya banget, nggak, udah, biar, gaes), akrab dan lugas, dengan sapaan yang konsisten."},
+{k:"edukatif",n:"Edukatif & Sederhana",ex:"Nenkin itu apa sih? Ini penjelasan singkatnya.",d:"Menjelaskan dengan bahasa paling sederhana, istilah sulit langsung diberi arti, urut dan jelas."},
+{k:"persuasif",n:"Persuasif / Marketing",ex:"Urus lebih tenang, konsultasikan sekarang.",d:"Membujuk dengan manfaat yang jelas, hook kuat, dan ajakan bertindak, tanpa melebih-lebihkan atau menjanjikan hal yang tidak pasti."},
+{k:"inspiratif",n:"Inspiratif & Memotivasi",ex:"Perjuanganmu di Jepang layak dipersiapkan dengan matang.",d:"Nada membangkitkan semangat dan harapan, kalimat positif."},
+{k:"empatik",n:"Empatik & Menenangkan",ex:"Wajar kalau kamu cemas. Yuk kita bahas pelan-pelan.",d:"Mengakui perasaan lebih dulu, menenangkan, lalu memberi arah solusi; cocok untuk topik keresahan."},
+{k:"tegas",n:"Tegas & Mendesak",ex:"Jangan tunda, cek status datamu hari ini.",d:"Lugas dan penuh urgensi untuk peringatan atau tenggat, tanpa menakut-nakuti berlebihan."},
+{k:"bilingual",n:"Indonesia + Istilah Jepang",ex:"Nenkin (dana pensiun Jepang): kenali haknya.",d:"Bahasa Indonesia santai dengan istilah kunci bahasa Jepang (misalnya Nenkin, Gensen) yang langsung diberi arti singkat; tulis istilah Jepang dalam romaji."}
+];
 
-/* ============ EDIT 5: TEMPLATE PROMPT ============ */
+/* ============ EDIT 6: POSISI LOGO (semua ukuran kecil) ============ */
+var LOGOS=[
+{k:"tl",n:"Kiri atas",t:"pojok KIRI ATAS",top:true},
+{k:"bl",n:"Kiri bawah",t:"pojok KIRI BAWAH",top:false},
+{k:"tr",n:"Kanan atas",t:"pojok KANAN ATAS",top:true},
+{k:"br",n:"Kanan bawah",t:"pojok KANAN BAWAH",top:false}
+];
+
+/* ---------- pengaturan tersimpan (localStorage) ---------- */
+function pick(a,key,def){var v=load(key);return by(a,v).k===v?v:def}
+var styK=pick(STY,"sty","editorial"),lanK=pick(LANG,"lan","casual"),logoK=pick(LOGOS,"logo","tl");
+var TYPE=["carousel","feed","story"].indexOf(load("type"))>-1?load("type"):"carousel";
+var N=parseInt(load("n"),10);if(!(N>=3&&N<=10))N=6;
+var AI=load("ai")==="gemini"?"gemini":"chatgpt";
+
+function mkRad(box,name,items,get,set,inner){
+ box.innerHTML="";
+ items.forEach(function(it){
+  var lb=document.createElement("label");lb.className="rad";
+  var ip=document.createElement("input");ip.type="radio";ip.name=name;ip.value=it.k;ip.checked=get()===it.k;
+  ip.onchange=function(){set(it.k)};
+  var bx=document.createElement("span");bx.className="box";inner(bx,it);
+  lb.appendChild(ip);lb.appendChild(bx);box.appendChild(lb)});
+}
+function pill(){var p=document.createElement("span");p.className="pill";p.textContent="Rekomendasi";return p}
+mkRad($("styRad"),"sty",STY,function(){return styK},function(k){styK=k;save("sty",k)},function(bx,it){
+ var t=document.createElement("span");t.className="tt";t.appendChild(document.createTextNode(it.n));if(it.rec)t.appendChild(pill());
+ var sw=document.createElement("span");sw.className="sw";sw.innerHTML="<i></i><i></i><i></i>";t.appendChild(sw);bx.appendChild(t);
+ var h=document.createElement("span");h.className="hn";h.textContent=it.h;bx.appendChild(h)});
+mkRad($("logoRad"),"logo",LOGOS,function(){return logoK},function(k){logoK=k;save("logo",k)},function(bx,it){
+ bx.className="box lp";var p=document.createElement("span");p.className="pos p-"+it.k;p.innerHTML="<i></i>";bx.appendChild(p);
+ var t=document.createElement("span");t.className="tt";t.textContent=it.n+" (kecil)";bx.appendChild(t)});
+mkRad($("langRad"),"lan",LANG,function(){return lanK},function(k){lanK=k;save("lan",k)},function(bx,it){
+ var t=document.createElement("span");t.className="tt";t.appendChild(document.createTextNode(it.n));if(it.rec)t.appendChild(pill());bx.appendChild(t);
+ var h=document.createElement("span");h.className="hn";h.textContent="\u201C"+it.ex+"\u201D";bx.appendChild(h)});
+
+/* contoh keinginan khusus EXATA */
+[["Keresahan pemagang","buatkan 6 ide konten terkait keresahan pemagang di Jepang yang sedang terjadi akhir-akhir ini"],["Edukasi Nenkin","buatkan 5 ide konten edukasi Nenkin untuk pemagang yang akan pulang ke Indonesia"],["Gensen Choshu Hyo","buatkan 6 ide konten tentang Gensen Choshu Hyo yang sering disalahpahami pemagang"],["Pajak & administrasi","buatkan 5 ide konten tips pajak dan administrasi untuk pekerja Indonesia di Jepang"]].forEach(function(t){var b=document.createElement("button");b.className="chip";b.type="button";b.textContent=t[0];b.onclick=function(){$("want").value=t[1];save("want",t[1]);nav()};$("ex").appendChild(b)});
+$("want").value=load("want");$("want").oninput=function(){save("want",this.value);nav()};
+["wa","ig","tt"].forEach(function(k){$(k).value=load(k);$(k).oninput=function(){save(k,this.value);nav()}});
+
+/* ============ LANGKAH 4: format & AI ============ */
+function paintType(){[].forEach.call($("types").children,function(c){c.classList.toggle("on",c.dataset.t===TYPE)});$("slWrap").style.display=TYPE==="carousel"?"":"none"}
+function paintN(){[].forEach.call($("slides").children,function(c){c.classList.toggle("on",+c.textContent===N)});var a=[];for(var i=1;i<=N;i++)a.push(i+" "+(i%2?"kanan":"kiri"));$("slNote").textContent="Posisi karakter bergantian per slide ("+a.join(", ")+"), dengan pose dan ekspresi berbeda di tiap slide."}
+(function(){var s=$("slides");for(var i=3;i<=10;i++){(function(i){var b=document.createElement("button");b.type="button";b.textContent=i;b.onclick=function(){N=i;save("n",i);paintN()};s.appendChild(b)})(i)}})();
+[].forEach.call($("types").children,function(b){b.onclick=function(){TYPE=b.dataset.t;save("type",TYPE);paintType()}});
+function paintAI(){[].forEach.call(document.querySelectorAll("[data-ai]"),function(b){b.classList.toggle("on",b.dataset.ai===AI)})}
+function setAI(v){AI=v;save("ai",v);paintAI();if(STEP===6)finish();nav()}
+[].forEach.call(document.querySelectorAll("[data-ai]"),function(b){b.onclick=function(){setAI(b.dataset.ai)}});
+paintType();paintN();paintAI();
+
+/* ============ EDIT 7: TEMPLATE PROMPT ============ */
 function fix(h){h=h.trim();return h?(h[0]==="@"?h:"@"+h):""}
-function buildGPT(){
- var D=DIV[curDiv],want=$("want").value.trim(),wa=$("wa").value.trim(),ig=fix($("ig").value),tt=fix($("tt").value);
- var jenis,pendek,fmt;
- if(TYPE==="story"){jenis="Story (1 gambar, rasio 9:16, 1080 x 1920 px)";pendek="Story";fmt="Buat 1 gambar Story vertikal 9:16 (1080 x 1920 px). Sisakan area aman atas dan bawah (sekitar 14%) dari elemen penting karena tertutup UI aplikasi."}
- else if(TYPE==="feed"){jenis="Feed Single Post (1 gambar, rasio 4:5, 1080 x 1350 px)";pendek="Feed Single Post";fmt="Buat 1 gambar Feed Single Post 4:5 (1080 x 1350 px). Satu pesan utama, headline terbaca dalam 3 detik."}
- else{jenis="Feed Carousel "+N+" slide (tiap slide 1 gambar, rasio 4:5, 1080 x 1350 px)";pendek="Feed Carousel "+N+" slide";
-  fmt="Buat carousel tepat "+N+" slide. Satu slide = satu gambar terpisah (bukan kolase, bukan grid, bukan mockup). Buat berurutan dari slide 1 sampai slide "+N+", tiap slide diberi label 'Slide k/"+N+"'.\n- Slide 1 (cover): hook besar yang membuat orang berhenti scroll, sub-judul pendek, tanpa paragraf panjang.\n- Slide 2 sampai "+(N-1)+": satu poin per slide, headline kecil + penjelasan singkat (maks. sekitar 30 kata), mengalir sebagai satu cerita.\n- Slide "+N+" (penutup): ringkasan satu kalimat + CTA hasil bridging dari isi konten (aturan CTA di bawah).\n- Konsistensi wajib di semua slide: palet warna, font dan ketebalan, latar, margin, gaya ikon/ilustrasi, posisi logo, dan satu garis/pita penghubung di sekitar 78% tinggi slide yang menyambung dari kiri ke kanan antar slide. Beri petunjuk geser kecil di tepi kanan kecuali slide terakhir."}
- var P=[];
- P.push("# ROLE\nKamu adalah Senior Art Director + Content Strategist + Graphic Designer yang memakai GPT Image. Ubah permintaan singkat user menjadi ide terstruktur lalu desain visual final yang profesional, rapi, modern, dan mudah dibaca di HP.");
- P.push("# PERMINTAAN USER\n\""+want+"\""+(D.ctx?"\nKonteks brand: "+D.n+" ("+D.ctx+").":""));
- P.push("# JENIS KONTEN YANG AKAN DIBUAT\n"+jenis);
- P.push("# ALUR WAJIB (2 TAHAP, JANGAN DILEWATI)\n## TAHAP 1: balasan pertamamu HANYA TEKS. DILARANG membuat gambar pada balasan ini.\n1. Jabarkan dan jawab permintaan user secara lengkap. Tulis nomor sebagai bagian dari judul dengan format persis **Ide 1: judul/hook**, **Ide 2: judul/hook**, dst., tiap ide sebagai paragraf sendiri. JANGAN memakai daftar bernomor markdown (1. 2. 3.) karena nomornya bisa ter-reset. Jika user menyebut jumlah ide, buat tepat sejumlah itu; jika tidak, buat 6 ide. Tiap ide berisi: **judul/hook**, penjelasan 2-3 kalimat (masalah atau sudut pandang dan alasan relevan)"+(TYPE==="carousel"?", serta garis besar isi tiap slide dengan format 'Slide 1: ...', 'Slide 2: ...' (bukan daftar bernomor)":"")+".\n2. Setelah itu beri 3 ide tambahan yang relevan di bawah judul 'Ide lain yang mungkin cocok', nomornya melanjutkan ide terakhir dengan format yang sama (misalnya Ide 7, Ide 8, Ide 9 jika ide terakhir tadi Ide 6).\n3. Jangan mengarang fakta, angka, aturan, biaya, atau kutipan. Jika topik menyangkut kejadian terkini yang tidak bisa kamu pastikan, tandai 'perlu diverifikasi' dan jelaskan secara umum.\n4. Akhiri dengan PERSIS satu pertanyaan ini: \"Lanjut buat "+pendek+"nya? Balas dengan nomor ide yang kamu pilih (contoh: 1).\"\n5. Berhenti dan tunggu balasan user.\n\n## TAHAP 2: setelah user membalas nomor, atau jawaban positif seperti \"ya\" / \"lanjut\" / \"oke\"\n- Jika user hanya menjawab positif tanpa nomor, pakai ide nomor 1 dan sebutkan nomor yang kamu pakai.\n- Jika user menolak atau meminta ide baru, tawarkan ide baru dan jangan buat gambar.\n- Jika user memilih beberapa nomor, kerjakan satu ide per balasan lalu tanyakan ide berikutnya.\n- Setelah itu tulis ringkasan visual singkat (termasuk emosi tiap karakter bila ada), lalu buat gambarnya sesuai ide terpilih, jenis konten, referensi, dan aturan di bawah.");
- P.push("# SPESIFIKASI FORMAT\n"+fmt);
- var refs=Object.keys(sel).map(function(k){return sel[k]}),up=files.filter(function(f){return f.type==="ref"&&f.desc});
- var pal=D.pal,sty=D.sty,orn=D.orn;
- P.push("# PARAMETER DESAIN (OTOMATIS)\n- Warna: "+(pal.indexOf("dipilih")===0?"ambil dari referensi terpilih; jika tidak ada, pilih palet yang kontras dan sesuai topik":pal)+"\n- Gaya: "+sty+"\n- Ornamen: "+orn+"\n- Bahasa semua teks di gambar: Indonesia, ejaan benar, mudah dibaca di layar HP\n- Hierarki: headline > visual utama > isi > CTA > kontak > ornamen. Informasi penting tidak boleh kalah oleh dekorasi.");
- P.push(refBlock(false));
- var logos=files.filter(function(f){return f.type==="logo"}),assets=files.filter(function(f){return f.type==="aset"}),AS=[];
- P.push(logoRule(false));
- logos.forEach(function(l){AS.push("- LOGO upload user ("+l.name+"): "+(l.desc||"lihat lampiran")+". Gunakan file lampiran asli, jangan digambar ulang.")});
- assets.forEach(function(a){AS.push("- ASET upload user ("+a.name+"): "+(a.desc||"lihat lampiran")+". Gunakan sebagai elemen visual di desain.")});
- if(AS.length)P.push("# ASET DARI USER\nFile aslinya dilampirkan bersama prompt ini. Jika deskripsi tertulis berbeda dengan lampiran, lampiran yang benar.\n"+AS.join("\n"));
- var hasPerson=assets.some(function(a){return /orang|person|people|manusia/i.test(a.desc)});
- if(!hasPerson)P.push(charRule(false));
- var K=[];if(wa)K.push("WhatsApp: "+wa);if(ig)K.push("Instagram: "+ig);if(tt)K.push("TikTok: "+tt);
+function H(G,t){return G?"**"+t+"**\n":"# "+t+"\n"}
+function fmtOf(G){
+ if(TYPE==="story")return{jenis:"Story vertikal (1 gambar, portrait 9:16, 1080 x 1920 px)",pendek:"Story",fmt:"Buat 1 gambar Story portrait 9:16 (1080 x 1920 px). Jauhkan elemen penting (selain logo) dari area atas dan bawah sekitar 12% karena tertutup tampilan aplikasi."};
+ if(TYPE==="feed")return{jenis:"Feed Single Post (1 gambar, portrait 4:5, 1080 x 1350 px)",pendek:"Feed Single Post",fmt:"Buat 1 gambar Feed portrait 4:5 (1080 x 1350 px). Satu pesan utama dengan headline yang terbaca dalam 3 detik."};
+ var j="Feed Carousel "+N+" slide (tiap slide 1 gambar portrait 4:5, 1080 x 1350 px)",p="Feed Carousel "+N+" slide";
+ var common="- Slide 1 (cover): hook besar, sub-judul pendek, tanpa paragraf panjang.\n- Slide 2 sampai "+(N-1)+": satu poin per slide, headline kecil + penjelasan singkat (maks. sekitar 30 kata), mengalir sebagai satu cerita.\n- Slide "+N+" (penutup): ringkasan satu kalimat + CTA hasil bridging dari isi konten (aturan CTA di bawah).\n";
+ if(G)return{jenis:j,pendek:p,fmt:"Buat carousel tepat "+N+" slide, SATU slide per balasan (satu gambar, bukan kolase atau grid).\n"+common+"- Mulai slide 2, jadikan slide sebelumnya acuan dan samakan persis palet warna, font, latar, margin, gaya ikon, posisi logo, serta wajah dan busana karakter. Posisi, pose, dan ekspresi karakter justru HARUS berbeda dari slide sebelumnya sesuai tabel variasi karakter. Tambahkan satu garis oranye tipis yang menyambung antar slide sebagai penghubung.\n- Setelah tiap slide selesai (kecuali slide terakhir) tulis satu baris: \"Slide k/"+N+" selesai. Balas lanjut untuk slide berikutnya.\" (k = nomor slide yang baru selesai)."};
+ return{jenis:j,pendek:p,fmt:"Buat carousel tepat "+N+" slide. Satu slide = satu gambar terpisah (bukan kolase, bukan grid, bukan mockup). Buat berurutan dari slide 1 sampai slide "+N+", tiap balasan diberi label 'Slide k/"+N+"'.\n"+common+"- Konsistensi wajib di semua slide: palet warna, font dan ketebalan, latar, margin, gaya ikon, posisi logo, wajah dan busana karakter (identik), serta satu garis oranye tipis yang menyambung antar slide sebagai penghubung. Pengecualian: posisi, pose, dan ekspresi karakter berbeda tiap slide sesuai tabel variasi karakter. Beri petunjuk geser kecil di tepi kanan kecuali slide terakhir."};
+}
+function designBlock(G){
+ var S=by(STY,styK),L=[];
+ L.push("- Gaya hasil akhir: "+S.n+". "+S.d);
+ L.push("- Warna WAJIB mengikuti logo EXATA: putih sebagai warna dasar dan dominan (sekitar 60-70% area), oranye khas logo EXATA (sekitar #F7941D) untuk aksen seperti garis, ikon, penanda, dan CTA, serta hitam untuk teks dan elemen kontras. Jangan memakai warna lain sebagai warna dominan; foto boleh berwarna natural.");
+ L.push("- Ornamen brand (pakai secukupnya, jangan berlebihan): "+DIV.n.orn+".");
+ L.push("- Hierarki: headline, visual utama, isi, CTA, kontak, ornamen. Dekorasi tidak boleh mengalahkan informasi penting; teks selalu terbaca di layar HP.");
+ return H(G,G?"GAYA DESAIN DAN WARNA (WAJIB)":"GAYA DESAIN & WARNA (WAJIB)")+L.join("\n")}
+function langBlock(G){
+ var L=by(LANG,lanK);
+ return H(G,G?"BAHASA DAN GAYA TULISAN DI DALAM DESAIN":"BAHASA & GAYA TULISAN DI DALAM DESAIN")+"Semua teks yang tampil di gambar memakai bahasa Indonesia dengan gaya: "+L.n+". "+L.d+" Contoh nada: \""+L.ex+"\". Ejaan benar, kalimat singkat, mudah dibaca di HP. Istilah slang hanya yang umum dan sopan, tanpa kata kasar atau menyinggung. Terapkan gaya ini juga pada judul atau hook ide di Tahap 1 dan pada CTA."}
+function logoRule(G){
+ var p=by(LOGOS,logoK),st="";
+ if(TYPE==="story")st=p.top?" Pada Story, turunkan logo sedikit (sekitar 12% dari tepi atas) agar tidak tertutup tampilan aplikasi.":" Pada Story, naikkan logo sedikit (sekitar 12% dari tepi bawah) agar tidak tertutup tampilan aplikasi.";
+ var sl=TYPE==="carousel"?", termasuk setiap slide dari cover sampai penutup":"";
+ return H(G,G?"LOGO EXATA (WAJIB)":"LOGO EXATA (WAJIB DI SETIAP GAMBAR)")+"Logo EXATA (lockup \"Akuntan Pajak & Notaris\" dan tulisan EXATA) harus selalu tampil dengan ukuran KECIL di "+p.t+" pada setiap gambar yang kamu buat"+sl+". Pakai file logo asli yang "+(G?"kulampirkan":"dilampirkan user")+", jangan digambar ulang, diubah, atau diterjemahkan. Lebar logo sekitar 18-20% dari lebar gambar, jarak sekitar 5% dari tepi. Karena dasar desain putih, pastikan logo terbaca jelas: pakai versi logo bertulisan gelap bila tersedia, atau jika file logo berwarna putih letakkan di dalam panel hitam kecil. Beri ruang kosong di sekitarnya dan pastikan tidak bertabrakan dengan CTA, kontak, atau elemen lain."+st+" Konsisten di posisi yang sama pada semua gambar."}
+function charBase(G){
+ var me=G?"aku":"user",att=G?"kulampirkan":"dilampirkan user";
+ return H(G,G?"KARAKTER UTAMA (CHARACTER DNA, WAJIB KONSISTEN)":"KARAKTER UTAMA / CHARACTER DNA (WAJIB KONSISTEN)")+
+ "Jika desain membutuhkan manusia, SELALU gunakan satu karakter ini dan jangan membuat orang lain.\n"+
+ "Sumber kebenaran identitas:\n"+
+ "- Jika foto karakter "+att+": foto itu adalah acuan identitas utama. Wajah, bentuk kepala, warna kulit, mata, alis, hidung, bibir, senyum, dan hijab harus identik dengan foto. Jangan mengubah, mempercantik, menua-kan, memuda-kan, atau mengganti fitur apa pun. Jika deskripsi tertulis berbeda dengan foto, ikuti foto.\n"+
+ "- Jika tidak ada foto yang "+att+": buat karakter dari DNA tertulis di bawah dan pertahankan identik di semua gambar.\n"+
+ "- Jika kamu tidak bisa memakai wajah dari foto lampiran, katakan terus terang di Tahap 2 dan pakai DNA tertulis. Jangan diam-diam mengganti dengan wajah lain.\n"+
+ "DNA tertulis:\n- "+CHAR.dna.join("\n- ")+"\n"+
+ "Aturan pemakaian:\n"+
+ "- Hasil fotorealistik ala fotografi profesional, bukan kartun, anime, ilustrasi vektor, atau 3D.\n"+
+ "- Pose, sudut kamera, dan posisi boleh menyesuaikan komposisi, tetapi wajah tetap identik. Latar putih polos di foto hanya acuan; di desain, karakter menyatu dengan layout.\n"+
+ "- Busana mengikuti foto atau DNA di atas dan jangan diganti kecuali "+me+" memintanya.\n"+
+ "- Setiap kali membuat gambar, rujuk kembali ke foto karakter di pesan pertama. Pada carousel, wajah dan busana harus sama di semua slide.\n"+
+ "- EKSPRESI WAJIB EKSPRESIF dan sesuai makna kata-kata atau tema yang tampil bersama karakter itu: bingung, cemas, atau lelah untuk keresahan dan masalah; lega dan tersenyum untuk solusi; serius dan tegas untuk peringatan; antusias dan ramah untuk ajakan. Dukung emosi dengan bahasa tubuh (gerak tangan, posisi bahu, arah pandang) dan hindari wajah datar atau netral. Ekspresi berubah, identitas wajah tidak.\n"+
+ (G?"- Di deskripsi visual Tahap 2, sebutkan apakah karakter memakai foto lampiran atau DNA tertulis, lalu emosi yang kamu pilih untuk tiap karakter beserta alasannya.":"- Pada Tahap 2, sebutkan singkat apakah karakter memakai foto lampiran atau DNA tertulis, lalu emosi yang kamu pilih untuk tiap karakter sebelum menggambar.")}
+var POSES_MID=["menunjuk ke arah teks atau headline dengan satu tangan","memegang tablet atau dokumen sambil melihat ke kamera","tangan di dagu seperti berpikir, pandangan ke samping atas","kedua tangan terbuka seperti sedang menjelaskan","tangan terlipat di depan dada dengan percaya diri","memegang ponsel dan melihatnya","mengacungkan jempol","menoleh ke samping sambil memeluk berkas di dada"];
+var EXPR_MID=["cemas dan khawatir","bingung dan bertanya-tanya","serius dan fokus","terkejut ringan","berpikir dan penasaran","lega dan tersenyum","peduli dan empatik","percaya diri dan tegas"];
+function slideVar(G){
+ var L=[];
+ for(var i=1;i<=N;i++){
+  var side=i%2===1?"KANAN":"KIRI",pose,expr;
+  if(i===1){pose="menyapa ramah (tangan di dada atau melambai ringan)";expr="ramah dan menarik perhatian, selaras dengan hook cover"}
+  else if(i===N){pose="mengajak dengan tangan terbuka atau menunjuk ke arah CTA";expr="antusias dan ramah mengajak"}
+  else{pose=POSES_MID[(i-2)%POSES_MID.length];expr=EXPR_MID[(i-2)%EXPR_MID.length]}
+  L.push("- Slide "+i+": karakter di sisi "+side+"; pose: "+pose+"; ekspresi: "+expr);
+ }
+ return (G?"Variasi karakter per slide (WAJIB):":"VARIASI KARAKTER PER SLIDE (WAJIB):")+"\n"+L.join("\n")+"\n"+
+ "- Karakter tampil di SETIAP slide dan posisinya bergantian kanan dan kiri persis seperti daftar di atas; tidak boleh berada di sisi yang sama dengan slide sebelumnya. Pada slide padat informasi karakter boleh lebih kecil, tetapi tetap di sisi yang ditentukan.\n"+
+ "- Pose dan ekspresi harus berbeda di setiap slide: tidak boleh ada dua slide dengan pose atau ekspresi yang sama, termasuk slide yang tidak berurutan. Daftar di atas adalah saran awal; jika makna teks di sebuah slide menuntut ekspresi lain, ikuti makna teks tetapi tetap jangan menyamai slide lain.\n"+
+ "- Letakkan headline dan teks di sisi berlawanan dari karakter agar komposisi seimbang; tubuh atau pandangan karakter condong ke arah teks atau ke kamera. Karakter tidak boleh menutupi teks, logo, CTA, atau kontak.\n"+
+ "- Hanya posisi, pose, dan ekspresi yang berubah. Wajah, hijab, dan busana tetap identik di semua slide.\n"+
+ "- "+(G?"Sebelum menggambar setiap slide, cek daftar ini dan pastikan sisi karakter berlawanan dengan slide sebelumnya.":"Sebelum menggambar setiap slide, cek daftar ini dan pastikan sisi karakter berlawanan dengan slide sebelumnya, lalu sebutkan sisi, pose, dan ekspresinya di label slide.")}
+function charBlock(G){return charBase(G)+(TYPE==="carousel"?"\n"+slideVar(G):"")}
+function ctaBlock(G){
+ var wa=$("wa").value.trim(),ig=fix($("ig").value),tt=fix($("tt").value),K=[];
+ if(wa)K.push("WhatsApp: "+wa);if(ig)K.push("Instagram: "+ig);if(tt)K.push("TikTok: "+tt);
  var where=TYPE==="carousel"?"slide terakhir":"bagian bawah desain";
- P.push("# CTA & KONTAK\n"+(K.length?"Tampilkan di "+where+" saja, persis seperti tertulis (jangan diubah atau ditambah):\n- "+K.join("\n- ")+"\nBuat CTA singkat yang menjembatani isi konten ke ajakan menghubungi (contoh: \"Tanya via WhatsApp\" atau \"DM kami\"), lalu letakkan kontak di dekatnya.":"User tidak memberi kontak: JANGAN membuat blok kontak, nomor, atau username apa pun. Pada "+where+", buat CTA hasil bridging dari isi konten, pilih yang paling cocok: \"Save postingan ini\", \"Bagikan ke teman\", \"DM sekarang\", \"Komen di bawah\", \"Follow untuk info lainnya\".")+(TYPE==="carousel"?"\nCTA hanya muncul di slide terakhir.":""));
+ return H(G,G?"CTA DAN KONTAK":"CTA & KONTAK")+(K.length?"Tampilkan di "+where+" saja, persis seperti tertulis"+(G?"":" (jangan diubah atau ditambah)")+":\n- "+K.join("\n- ")+"\nBuat CTA singkat yang menjembatani isi konten ke ajakan menghubungi (misalnya \"Tanya via WhatsApp\" atau \"DM kami\"), lalu letakkan kontak di dekatnya.":(G?"Aku tidak memberi kontak, jadi jangan":"User tidak memberi kontak: JANGAN")+" membuat blok kontak, nomor, atau username apa pun. Pada "+where+", buat CTA hasil bridging dari isi konten dengan memilih yang paling cocok: \"Save postingan ini\", \"Bagikan ke teman\", \"DM sekarang\", \"Komen di bawah\", \"Follow untuk info lainnya\".")+(TYPE==="carousel"?"\nCTA hanya muncul di slide terakhir.":"")}
+function buildGPT(){
+ var want=$("want").value.trim(),F=fmtOf(false),P=[];
+ P.push("# ROLE\nKamu adalah Senior Art Director + Content Strategist + Graphic Designer yang memakai GPT Image. Ubah permintaan singkat user menjadi ide terstruktur lalu desain visual final yang profesional, rapi, modern, dan mudah dibaca di HP.");
+ P.push("# PERMINTAAN USER\n\""+want+"\"\nKonteks brand: "+DIV.n.ctx+".");
+ P.push("# JENIS KONTEN YANG AKAN DIBUAT\n"+F.jenis);
+ P.push("# ALUR WAJIB (2 TAHAP, JANGAN DILEWATI)\n## TAHAP 1: balasan pertamamu HANYA TEKS. DILARANG membuat gambar pada balasan ini.\n1. Jabarkan dan jawab permintaan user secara lengkap. Tulis nomor sebagai bagian dari judul dengan format persis **Ide 1: judul/hook**, **Ide 2: judul/hook**, dst., tiap ide sebagai paragraf sendiri. JANGAN memakai daftar bernomor markdown (1. 2. 3.) karena nomornya bisa ter-reset. Jika user menyebut jumlah ide, buat tepat sejumlah itu; jika tidak, buat 6 ide. Tiap ide berisi: **judul/hook**, penjelasan 2-3 kalimat (masalah atau sudut pandang dan alasan relevan)"+(TYPE==="carousel"?", serta garis besar isi tiap slide dengan format 'Slide 1: ...', 'Slide 2: ...' (bukan daftar bernomor)":"")+".\n2. Setelah itu beri 3 ide tambahan yang relevan di bawah judul 'Ide lain yang mungkin cocok', nomornya melanjutkan ide terakhir dengan format yang sama (misalnya Ide 7, Ide 8, Ide 9 jika ide terakhir tadi Ide 6).\n3. Jangan mengarang fakta, angka, aturan, biaya, atau kutipan. Jika topik menyangkut kejadian terkini yang tidak bisa kamu pastikan, tandai 'perlu diverifikasi' dan jelaskan secara umum.\n4. Akhiri dengan PERSIS satu pertanyaan ini: \"Lanjut buat "+F.pendek+"nya? Balas dengan nomor ide yang kamu pilih (contoh: 1).\"\n5. Berhenti dan tunggu balasan user.\n\n## TAHAP 2: setelah user membalas nomor, atau jawaban positif seperti \"ya\" / \"lanjut\" / \"oke\"\n- Jika user hanya menjawab positif tanpa nomor, pakai ide nomor 1 dan sebutkan nomor yang kamu pakai.\n- Jika user menolak atau meminta ide baru, tawarkan ide baru dan jangan buat gambar.\n- Jika user memilih beberapa nomor, kerjakan satu ide per balasan lalu tanyakan ide berikutnya.\n- Setelah itu tulis ringkasan visual singkat (termasuk sumber karakter dan emosi tiap karakter bila ada), lalu buat gambarnya sesuai ide terpilih, jenis konten, dan aturan di bawah.");
+ P.push("# SPESIFIKASI FORMAT\n"+F.fmt);
+ P.push(designBlock(false));P.push(langBlock(false));P.push(logoRule(false));P.push(charBlock(false));P.push(ctaBlock(false));
  P.push("# KUALITAS\nTeks tajam dan terbaca di HP, tidak saling menimpa, margin aman, tanpa watermark, tidak ada fakta atau kontak karangan. Jika ada teks yang ragu dieja, pakai kata yang lebih sederhana.");
  return P.join("\n\n---\n\n");
 }
-
-
-/* ============ PROMPT KHUSUS GEMINI ============ */
 function buildGem(){
- var D=DIV[curDiv],want=$("want").value.trim(),wa=$("wa").value.trim(),ig=fix($("ig").value),tt=fix($("tt").value);
- var jenis,pendek,fmt;
- if(TYPE==="story"){jenis="Story vertikal (1 gambar, portrait 9:16, 1080 x 1920 px)";pendek="Story";fmt="Buat 1 gambar Story portrait 9:16. Jauhkan elemen penting dari area atas dan bawah (sekitar 14%) karena tertutup tampilan aplikasi."}
- else if(TYPE==="feed"){jenis="Feed Single Post (1 gambar, portrait 4:5, 1080 x 1350 px)";pendek="Feed Single Post";fmt="Buat 1 gambar Feed portrait 4:5. Satu pesan utama dengan headline yang terbaca dalam 3 detik."}
- else{jenis="Feed Carousel "+N+" slide (tiap slide 1 gambar portrait 4:5, 1080 x 1350 px)";pendek="Feed Carousel "+N+" slide";
-  fmt="Buat carousel tepat "+N+" slide, SATU slide per balasan (satu gambar, bukan kolase atau grid).\n- Slide 1 (cover): hook besar, sub-judul pendek, tanpa paragraf.\n- Slide 2 sampai "+(N-1)+": satu poin per slide, headline kecil + penjelasan maksimal sekitar 30 kata.\n- Slide "+N+" (penutup): ringkasan satu kalimat + CTA hasil bridging dari isi konten.\n- Mulai slide 2, jadikan slide sebelumnya acuan dan samakan persis palet warna, font, latar, margin, gaya ikon, dan posisi logo. Tambahkan satu garis atau pita penghubung di sekitar 78% tinggi slide yang menyambung antar slide.\n- Setelah tiap slide selesai (kecuali slide terakhir) tulis satu baris: \"Slide k/"+N+" selesai. Balas lanjut untuk slide berikutnya.\" (k = nomor slide yang baru selesai)."}
- var refs=Object.keys(sel).map(function(k){return sel[k]}),up=files.filter(function(f){return f.type==="ref"&&f.desc});
- var logos=files.filter(function(f){return f.type==="logo"}),assets=files.filter(function(f){return f.type==="aset"});
- var P=[];
+ var want=$("want").value.trim(),F=fmtOf(true),P=[];
  P.push("Kamu adalah Art Director sekaligus Content Strategist yang membuat konten media sosial lengkap dengan gambarnya. Tugasmu mengubah permintaan singkatku menjadi ide yang jelas, lalu desain visual yang profesional, rapi, dan mudah dibaca di HP.");
- P.push("**PERMINTAANKU**\n\""+want+"\""+(D.ctx?"\nKonteks brand: "+D.n+" ("+D.ctx+").":""));
- P.push("**JENIS KONTEN AKHIR**\n"+jenis);
- P.push("**CARA KERJA (IKUTI URUTANNYA)**\n"+
- "Tahap 1, balasan pertamamu hanya teks. Jangan membuat gambar dulu.\n"+
- "1. Jawab permintaanku dengan deretan ide. Tulis nomor sebagai bagian dari judul dengan format persis **Ide 1: judul atau hook**, **Ide 2: judul atau hook**, dst., tiap ide sebagai paragraf sendiri. JANGAN memakai daftar bernomor markdown (1. 2. 3.) karena nomornya bisa ter-reset menjadi 1 semua di tampilan. Gunakan tanda strip (-) untuk poin kecil. Jika aku menyebut jumlah ide, buat tepat sejumlah itu; jika tidak, buat 6 ide. Setiap ide berisi judul atau hook, lalu 2-3 kalimat penjelasan tentang masalah atau sudut pandangnya"+(TYPE==="carousel"?", dan garis besar isi tiap slide dengan format 'Slide 1: ...', 'Slide 2: ...' (bukan daftar bernomor)":"")+".\n"+
- "2. Di bawahnya tambahkan 3 ide lain yang relevan dengan judul \"Ide lain yang mungkin cocok\", nomornya melanjutkan ide terakhir dengan format yang sama (misalnya Ide 7, Ide 8, Ide 9 jika ide terakhir tadi Ide 6).\n"+
- "3. Jika topiknya menyangkut kejadian terkini, cari informasi terbaru bila kamu bisa, sebutkan sumbernya secara singkat, dan beri tanda \"perlu dicek\" untuk hal yang belum pasti. Jangan mengarang fakta, angka, aturan, biaya, atau kutipan.\n"+
- "4. Tutup dengan tepat satu pertanyaan ini: \"Lanjut buat "+pendek+"nya? Balas dengan nomor ide pilihanmu (contoh: 1).\"\n"+
- "5. Berhenti di situ dan tunggu balasanku.\n\n"+
- "Tahap 2, setelah aku membalas nomor ide atau jawaban positif seperti \"ya\", \"lanjut\", \"oke\".\n"+
- "- Jika aku hanya menjawab positif tanpa nomor, pakai ide nomor 1 dan sebutkan nomornya.\n"+
- "- Jika aku menolak atau minta ide lain, tawarkan ide baru dan jangan buat gambar.\n"+
- "- Jika aku memilih beberapa nomor, kerjakan satu ide per balasan.\n"+
- "- Sebelum menggambar, tulis satu paragraf pendek berisi deskripsi visual (komposisi, warna, font, posisi tiap elemen, emosi dan ekspresi tiap karakter bila ada, dan teks persis yang akan tampil di gambar), lalu langsung buat gambarnya dengan fitur pembuat gambar. Jangan hanya menjelaskan tanpa membuat gambar.");
- P.push("**FORMAT GAMBAR**\n"+fmt);
- P.push("**GAYA VISUAL (SUDAH DITENTUKAN OTOMATIS)**\n- Warna: "+(D.pal.indexOf("dipilih")===0?"ambil dari referensi; jika tidak ada, pilih palet yang kontras dan cocok dengan topik":D.pal)+"\n- Gaya: "+D.sty+"\n- Ornamen: "+D.orn+"\n- Teks di gambar berbahasa Indonesia dengan ejaan benar. Headline maksimal sekitar 8 kata, ukuran besar, kontras tinggi, dan terbaca di layar HP.\n- Urutan perhatian: headline, visual utama, isi, CTA, kontak, ornamen. Dekorasi tidak boleh mengalahkan informasi penting.");
- P.push(refBlock(true));
- var AS=[];
- P.push(logoRule(true));
- logos.forEach(function(l){AS.push("- Logo dariku ("+l.name+"): "+(l.desc||"lihat lampiran")+". Pakai file lampiran apa adanya.")});
- assets.forEach(function(a){AS.push("- Aset dariku ("+a.name+"): "+(a.desc||"lihat lampiran")+". Pakai sebagai elemen visual.")});
- if(AS.length)P.push("**LAMPIRAN DARIKU**\nFile aslinya kulampirkan di pesan ini. Jika deskripsi tertulis berbeda dengan lampiran, ikuti lampiran.\n"+AS.join("\n"));
- var hasPerson=assets.some(function(a){return /orang|person|people|manusia/i.test(a.desc)});
- if(!hasPerson)P.push(charRule(true));
- var K=[];if(wa)K.push("WhatsApp: "+wa);if(ig)K.push("Instagram: "+ig);if(tt)K.push("TikTok: "+tt);
- var where=TYPE==="carousel"?"slide terakhir":"bagian bawah desain";
- P.push("**CTA DAN KONTAK**\n"+(K.length?"Tampilkan di "+where+" saja, persis seperti tertulis:\n- "+K.join("\n- ")+"\nBuat CTA singkat yang menjembatani isi konten ke ajakan menghubungi (misalnya \"Tanya via WhatsApp\" atau \"DM kami\"), lalu letakkan kontak di dekatnya.":"Aku tidak memberi kontak, jadi jangan membuat blok kontak, nomor, atau username apa pun. Di "+where+", buat CTA hasil bridging dari isi konten dengan memilih yang paling cocok: \"Save postingan ini\", \"Bagikan ke teman\", \"DM sekarang\", \"Komen di bawah\", \"Follow untuk info lainnya\".")+(TYPE==="carousel"?"\nCTA hanya muncul di slide terakhir.":""));
+ P.push("**PERMINTAANKU**\n\""+want+"\"\nKonteks brand: "+DIV.n.ctx+".");
+ P.push("**JENIS KONTEN AKHIR**\n"+F.jenis);
+ P.push("**CARA KERJA (IKUTI URUTANNYA)**\nTahap 1, balasan pertamamu hanya teks. Jangan membuat gambar dulu.\n1. Jawab permintaanku dengan deretan ide. Tulis nomor sebagai bagian dari judul dengan format persis **Ide 1: judul atau hook**, **Ide 2: judul atau hook**, dst., tiap ide sebagai paragraf sendiri. JANGAN memakai daftar bernomor markdown (1. 2. 3.) karena nomornya bisa ter-reset menjadi 1 semua di tampilan. Gunakan tanda strip (-) untuk poin kecil. Jika aku menyebut jumlah ide, buat tepat sejumlah itu; jika tidak, buat 6 ide. Setiap ide berisi judul atau hook, lalu 2-3 kalimat penjelasan tentang masalah atau sudut pandangnya"+(TYPE==="carousel"?", dan garis besar isi tiap slide dengan format 'Slide 1: ...', 'Slide 2: ...' (bukan daftar bernomor)":"")+".\n2. Di bawahnya tambahkan 3 ide lain yang relevan dengan judul \"Ide lain yang mungkin cocok\", nomornya melanjutkan ide terakhir dengan format yang sama (misalnya Ide 7, Ide 8, Ide 9 jika ide terakhir tadi Ide 6).\n3. Jika topiknya menyangkut kejadian terkini, cari informasi terbaru bila kamu bisa, sebutkan sumbernya secara singkat, dan beri tanda \"perlu dicek\" untuk hal yang belum pasti. Jangan mengarang fakta, angka, aturan, biaya, atau kutipan.\n4. Tutup dengan tepat satu pertanyaan ini: \"Lanjut buat "+F.pendek+"nya? Balas dengan nomor ide pilihanmu (contoh: 1).\"\n5. Berhenti di situ dan tunggu balasanku.\n\nTahap 2, setelah aku membalas nomor ide atau jawaban positif seperti \"ya\", \"lanjut\", \"oke\".\n- Jika aku hanya menjawab positif tanpa nomor, pakai ide nomor 1 dan sebutkan nomornya.\n- Jika aku menolak atau minta ide lain, tawarkan ide baru dan jangan buat gambar.\n- Jika aku memilih beberapa nomor, kerjakan satu ide per balasan.\n- Sebelum menggambar, tulis satu paragraf pendek berisi deskripsi visual (komposisi, warna, font, posisi tiap elemen, sumber karakter, emosi dan ekspresi tiap karakter bila ada, dan teks persis yang akan tampil di gambar), lalu langsung buat gambarnya dengan fitur pembuat gambar. Jangan hanya menjelaskan tanpa membuat gambar.");
+ P.push("**FORMAT GAMBAR**\n"+F.fmt);
+ P.push(designBlock(true));P.push(langBlock(true));P.push(logoRule(true));P.push(charBlock(true));P.push(ctaBlock(true));
  P.push("**KUALITAS**\nTeks tajam dan tidak terpotong, tidak ada elemen yang saling menimpa, margin aman, tanpa watermark, dan tidak ada fakta atau kontak karangan. Jika ragu mengeja suatu teks, pakai kata yang lebih sederhana. Jika ada teks yang salah eja di hasil gambar, aku akan minta kamu memperbaiki teksnya saja tanpa mengubah desain.");
  return P.join("\n\n");
 }
-var AI=load("ai")==="gemini"?"gemini":"chatgpt";
 function build(){return AI==="gemini"?buildGem():buildGPT()}
-function paintAI(){[].forEach.call(document.querySelectorAll("[data-ai]"),function(b){b.classList.toggle("on",b.dataset.ai===AI)})}
-function setAI(v){AI=v;save("ai",v);paintAI();if(STEP===5)finish()}
-[].forEach.call(document.querySelectorAll("[data-ai]"),function(b){b.onclick=function(){setAI(b.dataset.ai)}});
-paintAI();
 
-/* ============ NAVIGASI LAYAR ============ */
-var STEP=1,MAX=1,NAMES=["Ide","Referensi","Format","Tambahan","Hasil"];
-var dots=$("dots");for(var i=1;i<=4;i++)(function(i){var b=document.createElement("button");b.type="button";b.setAttribute("aria-label","Langkah "+i);b.onclick=function(){if(i<=MAX&&STEP!==5)go(i)};dots.appendChild(b)})(i);
+/* ============ NAVIGASI LAYAR (5 langkah + hasil) ============ */
+var STEP=1,MAX=1,TOTAL=5,NAMES=["Ide","Gaya","Lanjutan","Format","Kontak","Hasil"];
+var dots=$("dots");for(var i=1;i<=TOTAL;i++)(function(i){var b=document.createElement("button");b.type="button";b.setAttribute("aria-label","Langkah "+i);b.onclick=function(){if(i<=MAX&&i!==STEP)go(i)};dots.appendChild(b)})(i);
 function valid(){return $("want").value.trim().length>2}
-function check(){nav()}
 function nav(){
  var nx=$("nx"),bk=$("bk");
- $("nav").style.display=STEP===5?"none":"";
  bk.style.visibility=STEP===1?"hidden":"visible";
  nx.disabled=false;
  if(STEP===1){nx.textContent="Lanjut";nx.disabled=!valid()}
- else if(STEP===2)nx.textContent=Object.keys(sel).length?"Lanjut":"Lewati referensi";
- else if(STEP===3)nx.textContent="Lanjut";
- else nx.textContent=(files.length||$("wa").value||$("ig").value||$("tt").value)?"Buat Prompt":"Lewati & Buat Prompt";
+ else if(STEP===5)nx.textContent=($("wa").value||$("ig").value||$("tt").value)?"Buat Prompt":"Lewati & Buat Prompt";
+ else if(STEP===6)nx.textContent="Salin Prompt untuk "+(AI==="gemini"?"Gemini":"ChatGPT");
+ else nx.textContent="Lanjut";
 }
 function go(n){
- STEP=n;if(n>MAX)MAX=n;
- if(n===2&&!GAL){GAL=true;refresh()}
- for(var i=1;i<=5;i++)$("s"+i).classList.toggle("on",i===n);
- [].forEach.call(dots.children,function(d,i){d.className=(i+1)<n?"done":(i+1)===n?"cur":""});
- $("stp").textContent=n===5?"Selesai":"Langkah "+n+" dari 4 - "+NAMES[n-1];
- if(n===5)finish();
+ STEP=n;if(n>MAX)MAX=n;save("step",n);save("max",MAX);
+ for(var i=1;i<=6;i++)$("s"+i).classList.toggle("on",i===n);
+ [].forEach.call(dots.children,function(d,i){d.className=(i+1)<n?"done":(i+1)===n?"cur":(i+1)<=MAX?"done":""});
+ if(n===6)[].forEach.call(dots.children,function(d){d.className="done"});
+ $("stp").textContent=n===6?"Selesai":"Langkah "+n+" dari "+TOTAL+" - "+NAMES[n-1];
+ if(n===6)finish();
  nav();window.scrollTo({top:0,behavior:"smooth"});
+}
+function copyPrompt(){
+ var t=$("res").value,nm=AI==="gemini"?"Gemini":"ChatGPT";
+ function fb(){var r=$("res");r.select();document.execCommand("copy")}
+ try{navigator.clipboard.writeText(t).then(function(){toast("Prompt disalin. Tempel di "+nm)},function(){fb();toast("Prompt disalin. Tempel di "+nm)})}catch(e){fb();toast("Prompt disalin. Tempel di "+nm)}
 }
 $("bk").onclick=function(){if(STEP>1)go(STEP-1)};
 $("nx").onclick=function(){
  if(STEP===1&&!valid()){toast("Tulis dulu keinginanmu");$("want").focus();return}
- if(STEP===4){if(files.some(function(f){return f.status==="load"})){toast("Tunggu pemindaian gambar selesai");return}
-  var nb=$("nx");nb.disabled=true;nb.textContent=refsOf().length?"Memindai template...":"Menyusun prompt...";
-  scanRefs().then(function(){nb.disabled=false;go(5)});return}
+ if(STEP===6){copyPrompt();return}
  go(STEP+1)};
 
 /* ============ HASIL ============ */
 function finish(){
  var t=build();$("res").value=t;$("cnt").textContent="("+t.length.toLocaleString("id-ID")+" karakter)";
- var D=DIV[curDiv],ks=Object.keys(sel),K=[];
+ var K=[];
  if($("wa").value.trim())K.push("WA");if($("ig").value.trim())K.push("IG");if($("tt").value.trim())K.push("TikTok");
+ var w=$("want").value.trim();
  var rows=[
-  ["Keinginan",$("want").value.trim().slice(0,110)+($("want").value.trim().length>110?"...":""),1],
-  ["Brand","EXATA",1],
-  ["Template",ks.length?ks.length+" dipilih":"Gaya EXATA otomatis",2],
-  ["Jenis konten",TYPE==="carousel"?"Feed Carousel, "+N+" slide":TYPE==="feed"?"Feed Single Post":"Story",3],
-  ["AI tujuan",AI==="gemini"?"Gemini":"ChatGPT",3],
-  ["Kontak",K.length?K.join(", ")+" disematkan":"Tidak ada (CTA umum dibuat otomatis)",4],
-  ["Gambar sendiri",files.length?files.length+" file":"Tidak ada (karakter real otomatis)",4]
+  ["Keinginan",w.slice(0,110)+(w.length>110?"...":""),1],
+  ["Gaya desain",by(STY,styK).n+" (putih, oranye, hitam)",2],
+  ["Logo EXATA",by(LOGOS,logoK).n+", ukuran kecil",3],
+  ["Bahasa",by(LANG,lanK).n,3],
+  ["Jenis konten",TYPE==="carousel"?"Feed Carousel, "+N+" slide":TYPE==="feed"?"Feed Single Post":"Story",4],
+  ["AI tujuan",AI==="gemini"?"Gemini":"ChatGPT",4],
+  ["Kontak",K.length?K.join(", ")+" disematkan":"Tidak ada (CTA umum dibuat otomatis)",5],
+  ["Karakter",TYPE==="carousel"?"Karakter EXATA (DNA dari foto), posisi bergantian kanan dan kiri, pose dan ekspresi beda tiap slide":"Karakter EXATA (DNA dari foto, selalu disertakan)",null]
  ];
  var s=$("sum");s.innerHTML="";
- rows.forEach(function(r){var b=document.createElement("button");b.type="button";var d=document.createElement("div"),h=document.createElement("b");h.textContent=r[0];d.appendChild(h);d.appendChild(document.createTextNode(r[1]));var e=document.createElement("em");e.textContent="Ubah";b.appendChild(d);b.appendChild(e);b.onclick=function(){go(r[2])};s.appendChild(b)});
+ rows.forEach(function(r){var b=document.createElement("button");b.type="button";var d=document.createElement("div"),h=document.createElement("b");h.textContent=r[0];d.appendChild(h);d.appendChild(document.createTextNode(r[1]));b.appendChild(d);
+  if(r[2]){var e=document.createElement("em");e.textContent="Ubah";b.appendChild(e);b.onclick=function(){go(r[2])}}else{b.style.cursor="default"}
+  s.appendChild(b)});
  var G=AI==="gemini",nm=G?"Gemini":"ChatGPT",url=G?"https://gemini.google.com/app":"https://chatgpt.com/";
- $("cp").textContent="Salin Prompt untuk "+nm;
- $("how").innerHTML='<li><span>'+(G?'Buka <a href="'+url+'" target="_blank" rel="noopener" style="color:var(--b);font-weight:700">Gemini</a>, aktifkan fitur Buat gambar, lalu tempel prompt dan lampirkan file di bawah.':'Tempel prompt di <a href="'+url+'" target="_blank" rel="noopener" style="color:var(--b);font-weight:700">ChatGPT</a> dan lampirkan file di bawah.')+'</span></li><li><span>'+nm+' memberi daftar ide bernomor dulu, tanpa gambar.</span></li><li><span>Balas dengan nomor ide yang kamu pilih'+(TYPE==="carousel"&&G?', lalu balas "lanjut" setiap satu slide selesai.':'.')+'</span></li>';
- $("tip").innerHTML=G?'<b>Tips khusus Gemini</b><ul><li>Pastikan fitur Buat gambar aktif (atau pilih model yang lebih canggih jika tersedia) sebelum mengirim.</li><li>Gemini lebih stabil membuat satu gambar per balasan, jadi carousel dikerjakan slide demi slide.</li><li>Jika ada teks yang salah eja, balas: "Perbaiki teksnya saja, desain jangan diubah."</li><li>Lampirkan secukupnya (logo dan beberapa foto), jangan terlalu banyak sekaligus.</li><li>Jika nomor ide terlihat 1 semua, balas: "Tulis ulang ide dengan format Ide 1, Ide 2, dst. Jangan pakai daftar bernomor."</li></ul>':'<b>Tips ChatGPT</b><ul><li>Jika carousel hanya jadi sebagian slide, balas: "Lanjut ke slide berikutnya dengan gaya yang sama persis."</li></ul>';
- var ul=$("att");ul.innerHTML="";var n=0;
- function li(h){var e=document.createElement("li");e.appendChild(h);ul.appendChild(e);n++}
- if(D.logo){var a=document.createElement("a");a.href=D.logo[1];a.target="_blank";a.rel="noopener";a.textContent="Logo EXATA (WAJIB dilampirkan, unduh lalu lampirkan)";li(a)}
- files.forEach(function(f){li(document.createTextNode("File upload: "+f.name+" (lampirkan file aslinya)"))});
- ks.forEach(function(k){var r=sel[k],a=document.createElement("a");a.href=r.url;a.target="_blank";a.rel="noopener";a.download=r.file;a.textContent="Template: "+r.name+" (WAJIB dilampirkan, unduh file ini)";li(a)});
- if(!n)li(document.createTextNode("Tidak ada lampiran. Cukup tempel prompt."));
+ var CX=TYPE==="carousel"?'<li>Jika posisi atau pose karakter masih sama antar slide, balas: "Ikuti tabel variasi karakter. Ulangi slide ini dengan karakter di sisi yang berlawanan, pose dan ekspresi berbeda dari slide sebelumnya."</li>':'';
+ $("how").innerHTML='<li><span>'+(G?'Buka <a href="'+url+'" target="_blank" rel="noopener" style="color:var(--b);font-weight:700">Gemini</a>, aktifkan fitur Buat gambar, lalu tempel prompt dan lampirkan logo serta foto karakter di bawah.':'Buka <a href="'+url+'" target="_blank" rel="noopener" style="color:var(--b);font-weight:700">ChatGPT</a>, tempel prompt, dan lampirkan logo serta foto karakter di bawah dalam pesan yang sama.')+'</span></li><li><span>'+nm+' memberi daftar ide bernomor dulu, tanpa gambar.</span></li><li><span>Balas dengan nomor ide yang kamu pilih'+(TYPE==="carousel"&&G?', lalu balas "lanjut" setiap satu slide selesai.':'.')+'</span></li>';
+ $("tip").innerHTML=G?'<b>Tips khusus Gemini</b><ul><li>Pastikan fitur Buat gambar aktif (atau pilih model yang lebih canggih jika tersedia) sebelum mengirim.</li><li>Kirim prompt, logo, dan foto karakter dalam satu pesan yang sama.</li><li>Gemini lebih stabil membuat satu gambar per balasan, jadi carousel dikerjakan slide demi slide.</li>'+CX+'<li>Jika wajah belum mirip, balas: "Wajah belum identik dengan foto karakter. Ulangi dengan wajah persis seperti foto, jangan ubah fitur apa pun."</li><li>Jika ada teks yang salah eja, balas: "Perbaiki teksnya saja, desain jangan diubah."</li><li>Jika nomor ide terlihat 1 semua, balas: "Tulis ulang ide dengan format Ide 1, Ide 2, dst. Jangan pakai daftar bernomor."</li></ul>':'<b>Tips ChatGPT</b><ul><li>Kirim prompt, logo, dan foto karakter dalam satu pesan yang sama.</li>'+CX+'<li>Jika wajah belum mirip, balas: "Wajah belum identik dengan foto karakter. Ulangi dengan wajah persis seperti foto, jangan ubah fitur apa pun."</li><li>Jika carousel hanya jadi sebagian slide, balas: "Lanjut ke slide berikutnya dengan gaya yang sama persis."</li><li>Jika logo bergeser, balas: "Logo EXATA harus kecil di '+by(LOGOS,logoK).n.toLowerCase()+', pakai file logo yang dilampirkan."</li></ul>';
+ var ul=$("att");ul.innerHTML="";
+ var l1=document.createElement("li"),sq=document.createElement("span");sq.className="lg";l1.appendChild(sq);
+ var d1=document.createElement("span"),a1=document.createElement("a");a1.href=DIV.n.logo[1];a1.target="_blank";a1.rel="noopener";a1.textContent="Logo EXATA (WAJIB dilampirkan)";d1.appendChild(a1);
+ var s1=document.createElement("small");s1.textContent="Unduh lalu lampirkan. Pakai versi logo bertulisan gelap bila ada.";d1.appendChild(s1);l1.appendChild(d1);ul.appendChild(l1);
+ var l2=document.createElement("li"),im=document.createElement("img");im.alt="Foto karakter EXATA";im.src=CHAR.photo;im.onerror=function(){im.remove();small2.textContent="File "+CHAR.photo+" belum ditemukan. Unggah ke folder yang sama dengan halaman ini."};l2.appendChild(im);
+ var d2=document.createElement("span"),a2=document.createElement("a");a2.href=CHAR.photo;a2.download=CHAR.photo;a2.textContent="Foto karakter EXATA (WAJIB dilampirkan)";d2.appendChild(a2);
+ var small2=document.createElement("small");small2.textContent="Supaya wajah di hasil akhir identik dengan foto. Unduh lalu lampirkan.";d2.appendChild(small2);l2.appendChild(d2);ul.appendChild(l2);
 }
-$("cp").onclick=function(){var t=$("res").value;
- function fb(){var r=$("res");r.select();document.execCommand("copy")}
- try{navigator.clipboard.writeText(t).then(function(){toast("Prompt disalin. Tempel di "+(AI==="gemini"?"Gemini":"ChatGPT"))},function(){fb();toast("Prompt disalin. Tempel di "+(AI==="gemini"?"Gemini":"ChatGPT"))})}catch(e){fb();toast("Prompt disalin. Tempel di "+(AI==="gemini"?"Gemini":"ChatGPT"))}};
-$("again").onclick=function(){if(!confirm("Mulai dari awal? Pilihan referensi dan gambar akan direset."))return;sel={};files=[];drawItems();GAL=false;cur=[];$("gal").innerHTML="";drawPick();MAX=1;go(1)};
+$("again").onclick=function(){if(!confirm("Mulai dari awal? Semua pilihan yang tersimpan akan direset ke bawaan."))return;
+ try{Object.keys(localStorage).filter(function(k){return k.indexOf("pgw_")===0}).forEach(function(k){localStorage.removeItem(k)})}catch(e){}
+ location.reload()};
 
-drawPick();go(1);
+/* ---------- pulihkan posisi terakhir ---------- */
+(function(){
+ var s0=parseInt(load("step"),10)||1,m0=parseInt(load("max"),10)||1;
+ if(s0<1||s0>6)s0=1;if(s0>1&&!valid())s0=1;
+ MAX=Math.max(m0,s0);if(MAX>6)MAX=6;
+ go(s0);
+})();
 })();
 </script>
 </body>
